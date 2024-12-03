@@ -100,3 +100,19 @@ variable "ingressgateway_autoscaling" {
     target_cpu_utilization = 80
   }
 }
+variable "istiod_resources" {
+  description = "Resource requests and limits for istiod"
+  type = object({
+    requests_cpu    = string
+    requests_memory = string
+    limits_cpu      = string
+    limits_memory   = string
+  })
+  default = {
+    requests_cpu    = "500m"
+    requests_memory = "512Mi"
+    limits_cpu      = "1000m"
+    limits_memory   = "1024Mi"
+  }
+}
+
