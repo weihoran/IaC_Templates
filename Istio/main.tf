@@ -40,7 +40,7 @@ resource "helm_release" "istio_base" {
   create_namespace = true
 }
 
-# Install Istio Control Plane (istiod)
+# Install Istio Control Plane (istiod) with resource configurations and advanced settings
 resource "helm_release" "istiod" {
   name       = "istiod"
   namespace  = var.istio_namespace
@@ -49,9 +49,38 @@ resource "helm_release" "istiod" {
   version    = var.istio_version
 
   depends_on = [helm_release.istio_base]
+
+  # Resource Optimization
+  set {
+    name  = "pilot.resources.requests.cpu"
+    value = var.istiod_resources.requests_cpu
+  }
+  set {
+    name  = "pilot.resources.requests.memory"
+    value = var.istiod_resources.requests_memory
+  }
+  set {
+    name  = "pilot.resources.limits.cpu"
+    value = var.istiod_resources.limits_cpu
+  }
+  set {
+    name  = "pilot.resources.limits.memory"
+    value = var.istiod_resources.limits_memory
+  }
+
+  # Advanced Configurations
+  set {
+    name  = "pilot.traceSampling"
+    value = lookup(var.advanced_settings, "trace_sampling", 1.0)
+  }
+
+  set {
+    name  = "global.proxy.accessLogFile"
+    value = lookup(var.advanced_settings, "access_log_file", "/dev/stdout")
+  }
 }
 
-# Install Istio Ingress Gateway
+# Install Istio Ingress Gateway with resource configurations and advanced settings
 resource "helm_release" "istio_ingress" {
   name       = "istio-ingress"
   namespace  = var.istio_namespace
@@ -60,6 +89,30 @@ resource "helm_release" "istio_ingress" {
   version    = var.istio_version
 
   depends_on = [helm_release.istiod]
+
+  # Resource Optimization
+  set {
+    name  = "gateways.istio-ingressgateway.resources.requests.cpu"
+    value = var.ingressgateway_resources.requests_cpu
+  }
+  set {
+    name  = "gateways.istio-ingressgateway.resources.requests.memory"
+    value = var.ingressgateway_resources.requests_memory
+  }
+  set {
+    name  = "gateways.istio-ingressgateway.resources.limits.cpu"
+    value = var.ingressgateway_resources.limits_cpu
+  }
+  set {
+    name  = "gateways.istio-ingressgateway.resources.limits.memory"
+    value = var.ingressgateway_resources.limits_memory
+  }
+
+  # Advanced Configurations
+  set {
+    name  = "service.type"
+    value = lookup(var.advanced_settings, "ingress_service_type", "LoadBalancer")
+  }
 }
 
 # Create the application namespace
@@ -99,11 +152,11 @@ resource "kubernetes_manifest" "destination_rule" {
       "host" = "${var.app_name}.${var.app_namespace}.svc.cluster.local"
       "trafficPolicy" = {
         "loadBalancer" = {
-          "simple" = "LEAST_CONN"
+          "simple" = var.load_balancer_strategy
         }
         "connectionPool" = {
           "http" = {
-            "maxConnections" = 100
+            "maxConnections" = var.max_connections
           }
         }
       }
@@ -129,10 +182,10 @@ resource "kubernetes_manifest" "virtual_service" {
             "host" = var.app_name
           }
         }]
-        "timeout" = "10s"
+        "timeout" = var.http_timeout
         "retries" = {
-          "attempts"      = 3
-          "perTryTimeout" = "2s"
+          "attempts"      = var.retry_attempts
+          "perTryTimeout" = var.per_try_timeout
         }
       }]
     }
@@ -191,7 +244,7 @@ resource "kubernetes_manifest" "authorization_policy" {
       "rules" = [{
         "from" = [{
           "source" = {
-            "requestPrincipals" = ["*"]
+            "requestPrincipals" = var.request_principals
           }
         }]
       }]
@@ -199,31 +252,46 @@ resource "kubernetes_manifest" "authorization_policy" {
   }
 }
 
-# Create a Telemetry configuration for the application
-resource "kubernetes_manifest" "telemetry" {
-  manifest = {
-    "apiVersion" = "telemetry.istio.io/v1alpha1"
-    "kind"       = "Telemetry"
-    "metadata" = {
-      "name"      = "my-telemetry"
-      "namespace" = var.app_namespace
-    }
-    "spec" = {
-      "accessLogging" = [{
-        "providers" = [{
-          "name" = "envoy"
-        }]
-      }]
-      "metrics" = [{
-        "providers" = [{
-          "name" = "prometheus"
-        }]
-      }]
-      "tracing" = [{
-        "providers" = [{
-          "name" = "zipkin"
-        }]
-      }]
-    }
-  }
+# Include the Telemetry sub-module if enabled
+module "telemetry" {
+  source = "./modules/telemetry"
+
+  kubernetes_host                   = var.kubernetes_host
+  kubernetes_cluster_ca_certificate = var.kubernetes_cluster_ca_certificate
+  kubernetes_client_certificate     = var.kubernetes_client_certificate
+  kubernetes_client_key             = var.kubernetes_client_key
+  istio_namespace                   = var.istio_namespace
+
+  enable_telemetry = var.enable_telemetry
+}
+
+# Include the Advanced Configurations sub-module
+module "advanced_configurations" {
+  source = "./modules/advanced_configurations"
+
+  kubernetes_host                   = var.kubernetes_host
+  kubernetes_cluster_ca_certificate = var.kubernetes_cluster_ca_certificate
+  kubernetes_client_certificate     = var.kubernetes_client_certificate
+  kubernetes_client_key             = var.kubernetes_client_key
+
+  istio_namespace             = var.istio_namespace
+  advanced_settings           = var.advanced_settings
+  app_name                    = var.app_name
+  app_namespace               = var.app_namespace
+  domain                      = var.domain
+}
+
+# Include the Scalability sub-module
+module "scalability" {
+  source = "./scalability"
+
+  enable_autoscaling                = var.enable_autoscaling
+  istiod_autoscaling                = var.istiod_autoscaling
+  ingressgateway_autoscaling        = var.ingressgateway_autoscaling
+  custom_metrics_enabled            = var.custom_metrics_enabled
+  custom_metrics                    = var.custom_metrics
+
+  istio_namespace                   = var.istio_namespace
+  app_name                          = var.app_name
+  app_namespace                     = var.app_namespace
 }
