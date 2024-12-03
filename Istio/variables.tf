@@ -65,3 +65,38 @@ variable "tls_key" {
   type        = string
   default     = ""
 }
+# variables.tf
+
+variable "enable_autoscaling" {
+  description = "Enable autoscaling for Istio components"
+  type        = bool
+  default     = true
+}
+
+variable "istiod_autoscaling" {
+  description = "Autoscaling settings for istiod"
+  type = object({
+    min_replicas           = number
+    max_replicas           = number
+    target_cpu_utilization = number
+  })
+  default = {
+    min_replicas           = 1
+    max_replicas           = 5
+    target_cpu_utilization = 80
+  }
+}
+
+variable "ingressgateway_autoscaling" {
+  description = "Autoscaling settings for Istio ingressgateway"
+  type = object({
+    min_replicas           = number
+    max_replicas           = number
+    target_cpu_utilization = number
+  })
+  default = {
+    min_replicas           = 1
+    max_replicas           = 5
+    target_cpu_utilization = 80
+  }
+}
