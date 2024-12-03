@@ -18,12 +18,6 @@ variable "kubernetes_client_key" {
   type        = string
 }
 
-variable "kubernetes_cluster_name" {
-  description = "The name of the Kubernetes cluster"
-  type        = string
-  default     = "kubernetes"
-}
-
 variable "istio_version" {
   description = "The version of Istio to install"
   type        = string
@@ -65,10 +59,10 @@ variable "tls_key" {
   type        = string
   default     = ""
 }
-# variables.tf
 
+# Scalability Variables
 variable "enable_autoscaling" {
-  description = "Enable autoscaling for Istio components"
+  description = "Enable autoscaling for Istio components and applications"
   type        = bool
   default     = true
 }
@@ -100,19 +94,58 @@ variable "ingressgateway_autoscaling" {
     target_cpu_utilization = 80
   }
 }
-variable "istiod_resources" {
-  description = "Resource requests and limits for istiod"
+
+variable "custom_metrics_enabled" {
+  description = "Enable custom metrics for autoscaling"
+  type        = bool
+  default     = false
+}
+
+variable "custom_metrics" {
+  description = "Custom metrics for autoscaling"
   type = object({
-    requests_cpu    = string
-    requests_memory = string
-    limits_cpu      = string
-    limits_memory   = string
+    metric_name     = string
+    target_type     = string
+    target_value    = number
   })
   default = {
-    requests_cpu    = "500m"
-    requests_memory = "512Mi"
-    limits_cpu      = "1000m"
-    limits_memory   = "1024Mi"
+    metric_name  = "queue_length"
+    target_type  = "AverageValue"
+    target_value = 100
   }
 }
 
+# Advanced Configurations Variables
+variable "enable_circuit_breaking" {
+  description = "Enable circuit breaking configurations"
+  type        = bool
+  default     = false
+}
+
+variable "connection_pool_settings" {
+  description = "Connection pool settings for circuit breaking"
+  type = object({
+    max_connections = number
+  })
+  default = {
+    max_connections = 100
+  }
+}
+
+variable "enable_mtls" {
+  description = "Enable mutual TLS in Gateway"
+  type        = bool
+  default     = false
+}
+
+variable "enable_authorization_policy" {
+  description = "Enable AuthorizationPolicy"
+  type        = bool
+  default     = false
+}
+
+variable "request_principals" {
+  description = "Request principals for AuthorizationPolicy"
+  type        = list(string)
+  default     = ["*"]
+}
