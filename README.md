@@ -12,4 +12,4 @@ This Terraform module deploys and configures Istio on a Kubernetes cluster. It f
 - **Platform Portability**: Abstracts Kubernetes cluster access details, allowing deployment on any Kubernetes cluster.
 
 ## Module Structure
-
+istio_module/ ├── main.tf ├── variables.tf ├── outputs.tf ├── modules/ │ ├── telemetry/ │ │ ├── main.tf │ │ └── variables.tf │ └── advanced_configurations/ │ ├── main.tf │ └── variables.tf ├── scalability/ │ ├── main.tf │ └── variables.tf └── README.md
