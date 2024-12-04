@@ -1,4 +1,4 @@
-# Istio Terraform Module
+# Istio Terraform Template
 
 This documentation provides an overview of the **Istio Terraform Module**, detailing the required and optional input variables, outputs, dependencies, and the resources managed by the module. This module automates the deployment and configuration of Istio on a Kubernetes cluster, adhering to best practices for scalability, flexibility, and maintainability.
 
