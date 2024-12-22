@@ -1,0 +1,158 @@
+# Default values for prometheus-node-exporter.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  repository: ${repository}
+  tag: ${tag}
+  pullPolicy: ${pull_policy}
+
+service:
+  type: ${service_type}
+  port: ${service_port}
+  targetPort: 9100
+  nodePort:
+  listenOnAllInterfaces: true
+  annotations: ${service_annotations}
+
+prometheus:
+  monitor:
+    enabled: false
+
+## Customize the updateStrategy if set
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+resources: ${resources}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 200m
+  #   memory: 50Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 30Mi
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ${service_account}
+  annotations: ${service_account_annotations}
+  imagePullSecrets: []
+
+securityContext: ${security_context}
+
+containerSecurityContext: {}
+  # capabilities:
+  #   add:
+  #   - SYS_TIME
+
+rbac:
+  ## If true, create & use RBAC resources
+  ##
+  create: true
+  ## If true, create & use Pod Security Policy resources
+  ## https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+  pspEnabled: ${pod_security_policy_enable}
+  pspAnnotations: ${pod_security_policy_annotations}
+
+# for deployments that have node_exporter deployed outside of the cluster, list
+# their addresses here
+endpoints: []
+
+# Expose the service to the host network
+hostNetwork: ${host_network}
+
+## If true, node-exporter pods mounts host / at /host/root
+##
+hostRootFsMount: true
+
+## Assign a group of affinity scheduling rules
+##
+affinity: ${affinity}
+#   nodeAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       nodeSelectorTerms:
+#         - matchFields:
+#             - key: metadata.name
+#               operator: In
+#               values:
+#                 - target-host-name
+
+# Annotations to be added to node exporter pods
+podAnnotations: ${annotations}
+
+# Extra labels to be added to node exporter pods
+podLabels: ${labels}
+
+# Custom DNS configuration to be added to prometheus-node-exporter pods
+dnsConfig: {}
+# nameservers:
+#   - 1.2.3.4
+# searches:
+#   - ns1.svc.cluster-domain.example
+#   - my.dns.search.suffix
+# options:
+#   - name: ndots
+#     value: "2"
+#   - name: edns0
+
+## Assign a nodeSelector if operating a hybrid cluster
+##
+nodeSelector: ${node_selector}
+#   beta.kubernetes.io/arch: amd64
+#   beta.kubernetes.io/os: linux
+
+tolerations: ${tolerations}
+
+## Assign a PriorityClassName to pods if set
+priorityClassName: ${priority_class_name}
+
+## Additional container arguments
+##
+extraArgs: ${extra_args}
+#   - --collector.diskstats.ignored-devices=^(ram|loop|fd|(h|s|v)d[a-z]|nvme\\d+n\\d+p)\\d+$
+#   - --collector.textfile.directory=/run/prometheus
+
+## Additional mounts from the host
+##
+extraHostVolumeMounts: ${host_path_mounts}
+#  - name: <mountName>
+#    hostPath: <hostPath>
+#    mountPath: <mountPath>
+#    readOnly: true|false
+#    mountPropagation: None|HostToContainer|Bidirectional
+
+## Additional configmaps to be mounted.
+##
+configmaps: ${config_map_mounts}
+# - name: <configMapName>
+#   mountPath: <mountPath>
+secrets: []
+# - name: <secretName>
+#   mountPath: <mountPatch>
+## Override the deployment namespace
+##
+namespaceOverride: ""
+
+## Additional containers for export metrics to text file
+##
+sidecars: []
+##  - name: nvidia-dcgm-exporter
+##    image: nvidia/dcgm-exporter:1.4.3
+
+## Volume for sidecar containers
+##
+sidecarVolumeMount: []
+##  - name: collector-textfiles
+##    mountPath: /run/prometheus
+##    readOnly: false
+
+## Additional InitContainers to initialize the pod
+##
+extraInitContainers: []

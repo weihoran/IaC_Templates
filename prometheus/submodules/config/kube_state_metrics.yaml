@@ -1,0 +1,197 @@
+# Default values for kube-state-metrics.
+prometheusScrape: null
+image:
+  repository: ${repository}
+  tag: ${tag}
+  pullPolicy: ${pull_policy}
+
+imagePullSecrets: []
+# - name: "image-pull-secret"
+
+# If set to true, this will deploy kube-state-metrics as a StatefulSet and the data
+# will be automatically sharded across <.Values.replicas> pods using the built-in
+# autodiscovery feature: https://github.com/kubernetes/kube-state-metrics#automated-sharding
+# This is an experimental feature and there are no stability guarantees.
+autosharding:
+  enabled: ${autosharding}
+
+replicas: ${replica}
+
+# List of additional cli arguments to configure kube-state-metrics
+# for example: --enable-gzip-encoding, --log-file, etc.
+# all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/master/docs/cli-arguments.md
+extraArgs: ${extra_args}
+
+service:
+  port: ${service_port}
+  # Default to clusterIP for backward compatibility
+  type: ${service_type}
+  nodePort: 0
+  loadBalancerIP: ${service_lb_ip}
+  annotations: ${service_annotations}
+
+customLabels: ${labels}
+
+hostNetwork: ${host_network}
+
+rbac:
+  # If true, create & use RBAC resources
+  create: true
+
+  # Set to a rolename to use existing role - skipping role creating - but still doing serviceaccount and rolebinding to it, rolename set here.
+  # useExistingRole: your-existing-role
+
+  # If set to false - Run without Cluteradmin privs needed - ONLY works if namespace is also set (if useExistingRole is set this name is used as ClusterRole or Role to bind to)
+  useClusterRole: true
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created, require rbac true
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ${service_account}
+  # Reference to one or more secrets to be used when pulling images
+  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  imagePullSecrets: []
+  annotations: ${service_account_annotations}
+
+prometheus:
+  monitor:
+    enabled: false
+    additionalLabels: {}
+    namespace: ""
+    honorLabels: false
+
+## Specify if a Pod Security Policy for kube-state-metrics must be created
+## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/
+##
+podSecurityPolicy:
+  enabled: ${psp_enable}
+  annotations: ${psp_annotations}
+    ## Specify pod annotations
+    ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#apparmor
+    ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#seccomp
+    ## Ref: https://kubernetes.io/docs/concepts/policy/pod-security-policy/#sysctl
+    ##
+    # seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+    # seccomp.security.alpha.kubernetes.io/defaultProfileName: 'docker/default'
+    # apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+  additionalVolumes: ${additional_volumes}
+
+securityContext: ${security_context}
+  # enabled: true
+  # runAsUser: 65534
+  # fsGroup: 65534
+
+## Specify security settings for a Container
+## Allows overrides and additional options compared to (Pod) securityContext
+## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
+containerSecurityContext: ${container_security_context}
+
+## Node labels for pod assignment
+## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+nodeSelector: ${node_selector}
+
+## Affinity settings for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+affinity: ${affinity}
+
+## Tolerations for pod assignment
+## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+tolerations: ${tolerations}
+
+# Annotations to be added to the pod
+podAnnotations: ${annotations}
+
+## Assign a PriorityClassName to pods if set
+priorityClassName: ${priority_class_name}
+
+# Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+podDisruptionBudget: ${pdb}
+
+# Comma-separated list of metrics to be exposed.
+# This list comprises of exact metric names and/or regex patterns.
+# The allowlist and denylist are mutually exclusive.
+metricAllowlist: ${metric_allow_list}
+
+# Comma-separated list of metrics not to be enabled.
+# This list comprises of exact metric names and/or regex patterns.
+# The allowlist and denylist are mutually exclusive.
+metricDenylist: ${metric_deny_list}
+
+# Comma-separated list of additional Kubernetes label keys that will be used in the resource's
+# labels metric. By default the metric contains only name and namespace labels.
+# To include additional labels, provide a list of resource names in their plural form and Kubernetes
+# label keys you would like to allow for them (Example: '=namespaces=[k8s-label-1,k8s-label-n,...],pods=[app],...)'.
+# A single '*' can be provided per resource instead to allow any labels, but that has
+# severe performance implications (Example: '=pods=[*]').
+metricLabelsAllowlist: ${metric_label_allow_list}
+  # - namespaces=[k8s-label-1,k8s-label-n]
+
+# Available collectors for kube-state-metrics. By default all available
+# resources are enabled.
+collectors: ${collectors}
+  # - certificatesigningrequests
+  # - configmaps
+  # - cronjobs
+  # - daemonsets
+  # - deployments
+  # - endpoints
+  # - horizontalpodautoscalers
+  # - ingresses
+  # - jobs
+  # - limitranges
+  # - mutatingwebhookconfigurations
+  # - namespaces
+  # - networkpolicies
+  # - nodes
+  # - persistentvolumeclaims
+  # - persistentvolumes
+  # - poddisruptionbudgets
+  # - pods
+  # - replicasets
+  # - replicationcontrollers
+  # - resourcequotas
+  # - secrets
+  # - services
+  # - statefulsets
+  # - storageclasses
+  # - validatingwebhookconfigurations
+  # - verticalpodautoscalers
+  # - volumeattachments
+
+# Enabling kubeconfig will pass the --kubeconfig argument to the container
+kubeconfig:
+  enabled: false
+  # base64 encoded kube-config file
+  secret:
+
+# Comma-separated list of namespaces to be enabled for collecting resources. By default all namespaces are collected.
+namespaces: "${collection_namespace}"
+
+## Override the deployment namespace
+##
+namespaceOverride: ""
+
+## kube-state-metrics resource requests and limits
+## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
+resources: ${resources}
+  # limits:
+  #   cpu: 10m
+  #   memory: 16Mi
+  # requests:
+  #   cpu: 10m
+  #   memory: 16Mi
+
+## Provide a k8s version to define apiGroups for podSecurityPolicy Cluster Role.
+## For example: kubeTargetVersionOverride: 1.14.9
+##
+kubeTargetVersionOverride: ""
+
+# Enable self metrics configuration for service and Service Monitor
+# Default values for telemetry configuration can be overridden
+selfMonitor:
+  enabled: false
+  # telemetryHost: 0.0.0.0
+  # telemetryPort: 8081
